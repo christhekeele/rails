@@ -72,7 +72,7 @@ module ActionController
 
       self.status        = _extract_redirect_to_status(options, response_status)
       self.location      = _compute_redirect_to_location(request, options)
-      self.response_body = "<html><body>You are being <a href=\"#{ERB::Util.unwrapped_html_escape(location)}\">redirected</a>.</body></html>"
+      self.response_body = _compute_response_body_from_content_type(request, self.location)
     end
 
     def _compute_redirect_to_location(request, options) #:nodoc:
@@ -96,6 +96,20 @@ module ActionController
     end
     module_function :_compute_redirect_to_location
     public :_compute_redirect_to_location
+
+    def _compute_response_body_from_content_type(request, location)
+      location = ERB::Util.unwrapped_html_escape(location)
+      case request.content_type
+      when /html$/
+        %(<html><body>You are being <a href="#{location}">redirected</a>.</body></html>)
+      when /^json/
+        JSON.dump({message: "You are being redirected to #{location}."})
+      when /^text/
+        %(You are being redirected to #{location}.)
+      else; ''; end
+    end
+    module_function :_compute_response_body_from_content_type
+    public :_compute_response_body_from_content_type
 
     private
       def _extract_redirect_to_status(options, response_status)

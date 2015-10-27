@@ -3,6 +3,7 @@ require 'active_support/core_ext/uri'
 require 'active_support/core_ext/array/extract_options'
 require 'rack/utils'
 require 'action_controller/metal/exceptions'
+require 'action_controller/metal/redirecting'
 require 'action_dispatch/routing/endpoint'
 
 module ActionDispatch
@@ -37,11 +38,11 @@ module ActionDispatch
         uri.host   ||= req.host
         uri.port   ||= req.port unless req.standard_port?
 
-        body = %(<html><body>You are being <a href="#{ERB::Util.unwrapped_html_escape(uri.to_s)}">redirected</a>.</body></html>)
+        body = ActionController::Redirecting._compute_response_body_from_content_type(req, uri.to_s)
 
         headers = {
           'Location' => uri.to_s,
-          'Content-Type' => 'text/html',
+          'Content-Type' => req.content_type,
           'Content-Length' => body.length.to_s
         }
 
